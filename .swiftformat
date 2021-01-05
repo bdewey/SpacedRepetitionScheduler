@@ -1,7 +1,7 @@
 --binarygrouping none
 --decimalgrouping none
 --exclude Package.swift
---header "Copyright © 2019-present Brian's Brain. All rights reserved."
+--header "Copyright © 2020  Brian Dewey. Covered by the Apache 2.0 license."
 --hexgrouping none
 --indent 2
 --octalgrouping none

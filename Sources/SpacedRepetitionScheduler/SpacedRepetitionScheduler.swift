@@ -1,4 +1,4 @@
-// Copyright © 2019-present Brian's Brain. All rights reserved.
+// Copyright © 2020  Brian Dewey. Covered by the Apache 2.0 license.
 
 import Foundation
 
@@ -19,9 +19,9 @@ public extension Comparable {
   }
 }
 
-extension Array where Element == (key: CardAnswer, value: SpacedRepetitionScheduler.Item) {
+public extension Array where Element == (key: CardAnswer, value: SpacedRepetitionScheduler.Item) {
   /// A convenience for searching through a (small) array of keys / values
-  public subscript(_ answer: CardAnswer) -> SpacedRepetitionScheduler.Item? {
+  subscript(_ answer: CardAnswer) -> SpacedRepetitionScheduler.Item? {
     for (candidateAnswer, item) in self {
       if candidateAnswer == answer { return item }
     }
