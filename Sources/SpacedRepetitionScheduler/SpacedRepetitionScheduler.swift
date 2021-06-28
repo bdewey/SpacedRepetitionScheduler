@@ -7,61 +7,49 @@ public extension TimeInterval {
   static let day: TimeInterval = 60 * 60 * 24
 }
 
-public extension Comparable {
-  func clamped(to range: ClosedRange<Self>) -> Self {
-    if self > range.upperBound {
-      return range.upperBound
-    } else if self < range.lowerBound {
-      return range.lowerBound
-    } else {
-      return self
-    }
-  }
-}
-
-public extension Array where Element == (key: CardAnswer, value: SpacedRepetitionScheduler.Item) {
-  /// A convenience for searching through a (small) array of keys / values
-  subscript(_ answer: CardAnswer) -> SpacedRepetitionScheduler.Item? {
-    for (candidateAnswer, item) in self {
-      if candidateAnswer == answer { return item }
-    }
-    return nil
-  }
-}
-
-/// A spaced-repetition scheduler that implements an Anki-style algorithm, where items can be in either a "learning" state
-/// with a specific number of steps to "graduate", or the items can be in the "review" state with a geometric progression of times
-/// between reviews.
+/// Implementation of an Anki-style spaced repetition scheduler for active recall items.
+///
+/// In a learning system that uses [active recall](https://en.wikipedia.org/wiki/Active_recall), learners are presented with a *prompt* and rate their ability
+/// to recall the corresponding information. `SpacedRepetitionScheduler` determines the optimum time for the learner to see a *prompt* again, given his/her
+/// history of recalling the information associated with this prompt and how well he/she did recalling the associated information this time.
+///
+/// A *prompt* can be either in a *learning* state or a *review* state.
+///
+/// - In the *learning* state, the learner must successfully recall the corresponding information a specific number of times, at which point the prompt graduates to the *review* state.
+/// - In the *review* state, the amount of time between successive reviews of a prompt increases by a geometric progression with each successful recall.
 public struct SpacedRepetitionScheduler {
-  /// The scheduler works with this abstract "item". Since the scheduler needs to create new Items, this is a struct and not a protocol.
-  /// The consumer of the scheduler will need to create Items representing whatever is being scheduled, and then map new item state
-  /// back to the actual scheduled entity.
-  public struct Item: Hashable {
-    public enum LearningState: Hashable {
-      /// The item is in the learning state.
-      /// - parameter step: How many learning steps have been completed. `step == 0` implies a new card.
-      case learning(step: Int)
+  /// The state of a particular prompt.
+  public enum LearningState: Hashable {
+    /// Represents a prompt in the *learning* state.
+    ///
+    /// An item stays in the learning state until it has been recalled a specific number of times, determined by the number of items in the ``SpacedRepetitionScheduler.learningIntervals`` array.
+    /// - parameter step: How many learning steps have been completed. `step == 0` implies a new card.
+    case learning(step: Int)
 
-      /// The item is in the "review" state
-      case review
-    }
+    /// Represents a prompt in the *review* state.
+    ///
+    /// Items in the review state are scheduled at increasingly longer intervals with each successful recall.
+    case review
+  }
 
-    /// The learning state of this item.
+  /// Information needed to determine the optimum time to review a prompt again.
+  public struct PromptSchedulingMetadata: Hashable {
+    /// The learning state of this prompt.
     public var learningState: LearningState
 
-    /// How many times this item has been reviewed.
+    /// How many times this prompt has been reviewed.
     public var reviewCount: Int
 
-    /// How many times this item regressed from "review" back to "learning"
+    /// How many times this prompt regressed from "review" back to "learning"
     public var lapseCount: Int
 
-    /// The ideal amount of time until seeing this item again.
+    /// The ideal amount of time until seeing this prompt again.
     public var interval: TimeInterval
 
-    // TODO: This needs a reasonable description
-    public var factor: Double
+    /// The multiplicative factor for increasing the delay for seeing this prompt again, if ``learningState`` is `.review`.
+    public var reviewSpacingFactor: Double
 
-    /// Public initializer so we can create these in other modules.
+    /// Creates prompt metadata with specific values.
     public init(
       learningState: LearningState = .learning(step: 0),
       reviewCount: Int = 0,
@@ -72,13 +60,17 @@ public struct SpacedRepetitionScheduler {
       self.learningState = learningState
       self.reviewCount = reviewCount
       self.lapseCount = lapseCount
-      self.factor = factor
+      self.reviewSpacingFactor = factor
       self.interval = interval
     }
   }
 
-  /// Public initializer.
-  /// - parameter learningIntervals: The time between successive stages of "learning" a card.
+  /// Creates a `SpacedReptitionScheduler` with the specified scheduling parameters.
+  ///
+  /// - parameter learningIntervals: The time intervals between successive successful recalls of a prompt in *learning* mode. The number of items in this array determines how many times a learner must successfully recall a prompt for it to graduate to the *review* mode.
+  /// - parameter easyGraduatingInterval: The ideal interval for reviewing a prompt again after it graduates from *learning* to *review* with a recall ease of *easy*.
+  /// - parameter goodGraduatingInterval: The ideal interval for reviewing a prompt again after it graduates from *learning* to *review* with a recall ease of *good*.
+  /// - parameter easyBoost: An additional mutiplicative factor for the scheduling interval when a prompt is in *review* mode and its recall ease is *easy*.
   public init(
     learningIntervals: [TimeInterval],
     easyGraduatingInterval: TimeInterval = 4 * .day,
@@ -94,35 +86,45 @@ public struct SpacedRepetitionScheduler {
   /// The intervals between successive steps when "learning" an item.
   public let learningIntervals: [TimeInterval]
 
-  /// When a card graduates from "learning" to "review" with an "easy" answer, it's scheduled out by this interval.
+  /// The ideal interval for reviewing a prompt again after it graduates from *learning* to *review* with a recall ease of *easy*.
   public let easyGraduatingInterval: TimeInterval
 
-  /// When a card graduates from "learning" to "review" with a "good" answer, it's schedule out by this interval.
+  /// The ideal interval for reviewing a prompt again after it graduates from *learning* to *review* with a recall ease of *good*.
   public let goodGraduatingInterval: TimeInterval
 
-  /// An additional boost given to "easy" cards in review mode.
+  /// An additional mutiplicative factor for the scheduling interval when a prompt is in *review* mode and its recall ease is *easy*.
   public let easyBoost: Double
 
-  /// Determines the next state of a schedulable item for all possible answers.
-  /// - parameter item: The item to schedule.
-  /// - parameter now: The current time. Item due dates will be relative to this date.
-  /// - returns: An array containing all possible answers and the next state of the item if the person picks that answer.
-  public func scheduleItem(
-    _ item: Item,
-    afterDelay delay: TimeInterval = 0
-  ) -> [(key: CardAnswer, value: Item)] {
-    let result = CardAnswer.allCases.compactMap { answer in
+  /// Returns a mapping of possible ``RecallEase`` values to updated ``PromptSchedulingMetadata`` values.
+  /// - Parameters:
+  ///   - promptSchedulingMetadata: The current ``PromptSchedulingMetadata`` for a prompt.
+  ///   - timeIntervalSincePastReview: The duration of time since the prompt was last reviewed.
+  /// - Returns: An array of key/value pairs associating a valid ``RecallEase`` to an updated ``PromptSchedulingMetadata`` if the prompt was recalled with that ease value.
+  public func nextPromptSchedulingMetadataOptions(
+    after promptSchedulingMetadata: PromptSchedulingMetadata,
+    timeIntervalSincePastReview: TimeInterval = 0
+  ) -> [(key: RecallEase, value: PromptSchedulingMetadata)] {
+    let result = RecallEase.allCases.compactMap { answer in
       // result may be nil; in that case return nil instead of `(answer, nil)`
-      self.result(item: item, answer: answer, delay: delay).flatMap { (answer, $0) }
+      self.updatingPromptSchedulingMetadata(after: promptSchedulingMetadata, recallEase: answer, timeIntervalSincePastReview: timeIntervalSincePastReview).flatMap { (answer, $0) }
     }
     return result
   }
 
-  /// Computes the scheduling result given an item, answer, and current time.
-  private func result(item: Item, answer: CardAnswer, delay: TimeInterval) -> Item? {
-    var result = item
+  /// Returns the next ``PromptSchedulingMetadata`` for a prompt that was recalled with specified `recallEase` after `timeIntervalSincePastReview`
+  /// - Parameters:
+  ///   - promptSchedulingMetadata: The current ``PromptSchedulingMetadata`` for a prompt.
+  ///   - recallEase: A value representing how easy the learner recalled the information associated with the prompt.
+  ///   - timeIntervalSincePastReview: The duration of time since the prompt was last reviewed.
+  /// - Returns: An updated value for ``PromptSchedulingMetadata``
+  public func updatingPromptSchedulingMetadata(
+    after promptSchedulingMetadata: PromptSchedulingMetadata,
+    recallEase: RecallEase,
+    timeIntervalSincePastReview: TimeInterval
+  ) -> PromptSchedulingMetadata? {
+    var result = promptSchedulingMetadata
     result.reviewCount += 1
-    switch (item.learningState, answer) {
+    switch (promptSchedulingMetadata.learningState, recallEase) {
     case (.learning, .again):
       moveToFirstStep(&result)
     case (.learning, .easy):
@@ -144,23 +146,23 @@ public struct SpacedRepetitionScheduler {
       }
     case (.review, .again):
       result.lapseCount += 1
-      result.factor = max(1.3, result.factor - 0.2)
+      result.reviewSpacingFactor = max(1.3, result.reviewSpacingFactor - 0.2)
       moveToFirstStep(&result)
     case (.review, .hard):
       result.interval = result.interval * 1.2
-      result.factor = max(1.3, result.factor - 0.15)
+      result.reviewSpacingFactor = max(1.3, result.reviewSpacingFactor - 0.15)
     case (.review, .good):
       // Expand interval by factor, fuzzing the result, and ensuring that it at least moves forward
       // by the "hard" amount.
-      result.interval = (result.interval + delay / 2) * result.factor
+      result.interval = (result.interval + timeIntervalSincePastReview / 2) * result.reviewSpacingFactor
     case (.review, .easy):
-      result.interval = (result.interval + delay) * result.factor * easyBoost
-      result.factor += 0.15
+      result.interval = (result.interval + timeIntervalSincePastReview) * result.reviewSpacingFactor * easyBoost
+      result.reviewSpacingFactor += 0.15
     }
     return result
   }
 
-  private func moveToFirstStep(_ result: inout Item) {
+  private func moveToFirstStep(_ result: inout PromptSchedulingMetadata) {
     // Go back to the initial learning step, schedule out a tiny bit.
     result.learningState = .learning(step: 0)
     result.interval = learningIntervals.first ?? .minute
