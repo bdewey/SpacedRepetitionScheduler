@@ -1,4 +1,4 @@
-# SpacedRepetitionScheduler
+# ``SpacedRepetitionScheduler``
 
 Implements an Anki-style spaced repetition scheduler for active recall prompts.
 
@@ -17,14 +17,14 @@ the learner recalls the information associated with a prompt.
 - In the *review* mode, the amount of time between successive reviews of a prompt increases by a geometric progression with each successful recall.
 
 
-## Where to start in the code
+## Topics
 
 ### Representing prompts
 
-- `PromptSchedulingMetadata` -- Information needed to determine the recommended time to review a prompt again.
-- `PromptSchedulingMode` -- Whether the prompt is in *learning* or *review* mode.
+- ``PromptSchedulingMetadata``
+- ``PromptSchedulingMode``
 
 ### Scheduling parameters
 
-- `RecallEase` -- Rating for how easy it is to recall the information associated with a prompt.
-- `SchedulingParameters` -- Holds parameters used to determine the recommended time to schedule the next review of a prompt.
+- ``RecallEase``
+- ``SchedulingParameters``
