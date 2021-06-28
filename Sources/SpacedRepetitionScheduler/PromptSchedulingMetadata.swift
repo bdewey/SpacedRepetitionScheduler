@@ -16,7 +16,7 @@ public struct PromptSchedulingMetadata: Hashable {
   /// The ideal amount of time until seeing this prompt again.
   public var interval: TimeInterval
 
-  /// The multiplicative factor for increasing the delay for seeing this prompt again, if ``learningState`` is `.review`.
+  /// The multiplicative factor for increasing the delay for seeing this prompt again, if ``mode`` is `.review`.
   public var reviewSpacingFactor: Double
 
   /// Creates prompt metadata with specific values.

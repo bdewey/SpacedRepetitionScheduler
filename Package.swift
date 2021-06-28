@@ -1,4 +1,4 @@
-// swift-tools-version:5.4
+// swift-tools-version:5.5
 
 import PackageDescription
 
@@ -14,8 +14,7 @@ let package = Package(
   targets: [
     .target(
       name: "SpacedRepetitionScheduler",
-      dependencies: [],
-      exclude: ["Documentation.docc"]
+      dependencies: []
     ),
     .testTarget(
       name: "SpacedRepetitionSchedulerTests",
