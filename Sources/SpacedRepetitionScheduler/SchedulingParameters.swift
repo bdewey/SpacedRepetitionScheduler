@@ -7,16 +7,7 @@ public extension TimeInterval {
   static let day: TimeInterval = 60 * 60 * 24
 }
 
-/// Holds parameters used to determine the optimum time to schedule the next review of a prompt.
-///
-/// In a learning system that uses [active recall](https://en.wikipedia.org/wiki/Active_recall), learners are presented with a *prompt* and rate their ability
-/// to recall the corresponding information. `SpacedRepetitionScheduler` determines the optimum time for the learner to see a *prompt* again, given his/her
-/// history of recalling the information associated with this prompt and how well he/she did recalling the associated information this time.
-///
-/// A *prompt* can be either in a *learning* state or a *review* state.
-///
-/// - In the *learning* state, the learner must successfully recall the corresponding information a specific number of times, at which point the prompt graduates to the *review* state.
-/// - In the *review* state, the amount of time between successive reviews of a prompt increases by a geometric progression with each successful recall.
+/// Holds parameters used to determine the recommended time to schedule the next review of a prompt.
 public struct SchedulingParameters {
   /// Creates a `SpacedReptitionScheduler` with the specified scheduling parameters.
   ///

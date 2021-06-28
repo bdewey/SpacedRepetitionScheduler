@@ -2,10 +2,10 @@
 
 import Foundation
 
-/// Information needed to determine the optimum time to review a prompt again.
+/// Information needed to determine the recommended time to review a prompt again.
 public struct PromptSchedulingMetadata: Hashable {
   /// The learning state of this prompt.
-  public var learningState: LearningState
+  public var mode: PromptSchedulingMode
 
   /// How many times this prompt has been reviewed.
   public var reviewCount: Int
@@ -21,13 +21,13 @@ public struct PromptSchedulingMetadata: Hashable {
 
   /// Creates prompt metadata with specific values.
   public init(
-    learningState: LearningState = .learning(step: 0),
+    mode: PromptSchedulingMode = .learning(step: 0),
     reviewCount: Int = 0,
     lapseCount: Int = 0,
     interval: TimeInterval = 0,
     reviewSpacingFactor: Double = 2.5
   ) {
-    self.learningState = learningState
+    self.mode = mode
     self.reviewCount = reviewCount
     self.lapseCount = lapseCount
     self.reviewSpacingFactor = reviewSpacingFactor
@@ -51,12 +51,12 @@ public struct PromptSchedulingMetadata: Hashable {
     timeIntervalSincePriorReview: TimeInterval
   ) throws {
     reviewCount += 1
-    switch (learningState, recallEase) {
+    switch (mode, recallEase) {
     case (.learning, .again):
       moveToFirstStep(schedulingParameters: schedulingParameters)
     case (.learning, .easy):
       // Immediate graduation!
-      learningState = .review
+      mode = .review
       interval = schedulingParameters.easyGraduatingInterval
     case (.learning, .hard):
       // Not a valid answer -- no "hard" for something we're learning
@@ -65,10 +65,10 @@ public struct PromptSchedulingMetadata: Hashable {
       // Move to the next step.
       if step < (schedulingParameters.learningIntervals.count - 1) {
         interval = schedulingParameters.learningIntervals[step + 1]
-        learningState = .learning(step: step + 1)
+        mode = .learning(step: step + 1)
       } else {
         // Graduate to "review"
-        learningState = .review
+        mode = .review
         interval = schedulingParameters.goodGraduatingInterval
       }
     case (.review, .again):
@@ -128,7 +128,7 @@ public struct PromptSchedulingMetadata: Hashable {
 
   private mutating func moveToFirstStep(schedulingParameters: SchedulingParameters) {
     // Go back to the initial learning step, schedule out a tiny bit.
-    learningState = .learning(step: 0)
+    mode = .learning(step: 0)
     interval = schedulingParameters.learningIntervals.first ?? .minute
   }
 }
