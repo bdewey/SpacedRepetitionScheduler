@@ -7,7 +7,7 @@ public extension TimeInterval {
   static let day: TimeInterval = 60 * 60 * 24
 }
 
-/// Implementation of an Anki-style spaced repetition scheduler for active recall items.
+/// Holds parameters used to determine the optimum time to schedule the next review of a prompt.
 ///
 /// In a learning system that uses [active recall](https://en.wikipedia.org/wiki/Active_recall), learners are presented with a *prompt* and rate their ability
 /// to recall the corresponding information. `SpacedRepetitionScheduler` determines the optimum time for the learner to see a *prompt* again, given his/her
@@ -17,54 +17,7 @@ public extension TimeInterval {
 ///
 /// - In the *learning* state, the learner must successfully recall the corresponding information a specific number of times, at which point the prompt graduates to the *review* state.
 /// - In the *review* state, the amount of time between successive reviews of a prompt increases by a geometric progression with each successful recall.
-public struct SpacedRepetitionScheduler {
-  /// The state of a particular prompt.
-  public enum LearningState: Hashable {
-    /// Represents a prompt in the *learning* state.
-    ///
-    /// An item stays in the learning state until it has been recalled a specific number of times, determined by the number of items in the ``SpacedRepetitionScheduler.learningIntervals`` array.
-    /// - parameter step: How many learning steps have been completed. `step == 0` implies a new card.
-    case learning(step: Int)
-
-    /// Represents a prompt in the *review* state.
-    ///
-    /// Items in the review state are scheduled at increasingly longer intervals with each successful recall.
-    case review
-  }
-
-  /// Information needed to determine the optimum time to review a prompt again.
-  public struct PromptSchedulingMetadata: Hashable {
-    /// The learning state of this prompt.
-    public var learningState: LearningState
-
-    /// How many times this prompt has been reviewed.
-    public var reviewCount: Int
-
-    /// How many times this prompt regressed from "review" back to "learning"
-    public var lapseCount: Int
-
-    /// The ideal amount of time until seeing this prompt again.
-    public var interval: TimeInterval
-
-    /// The multiplicative factor for increasing the delay for seeing this prompt again, if ``learningState`` is `.review`.
-    public var reviewSpacingFactor: Double
-
-    /// Creates prompt metadata with specific values.
-    public init(
-      learningState: LearningState = .learning(step: 0),
-      reviewCount: Int = 0,
-      lapseCount: Int = 0,
-      interval: TimeInterval = 0,
-      factor: Double = 2.5
-    ) {
-      self.learningState = learningState
-      self.reviewCount = reviewCount
-      self.lapseCount = lapseCount
-      self.reviewSpacingFactor = factor
-      self.interval = interval
-    }
-  }
-
+public struct SchedulingParameters {
   /// Creates a `SpacedReptitionScheduler` with the specified scheduling parameters.
   ///
   /// - parameter learningIntervals: The time intervals between successive successful recalls of a prompt in *learning* mode. The number of items in this array determines how many times a learner must successfully recall a prompt for it to graduate to the *review* mode.
