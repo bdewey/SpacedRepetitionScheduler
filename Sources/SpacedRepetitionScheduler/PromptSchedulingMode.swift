@@ -6,7 +6,7 @@ import Foundation
 public enum PromptSchedulingMode: Hashable {
   /// Represents a prompt in the *learning* mode.
   ///
-  /// An item stays in the learning state until it has been recalled a specific number of times, determined by the number of items in the ``SpacedRepetitionScheduler.learningIntervals`` array.
+  /// An item stays in the learning state until it has been recalled a specific number of times, determined by the number of items in the ``SchedulingParameters/learningIntervals`` array.
   /// - parameter step: How many learning steps have been completed. `step == 0` implies a new card.
   case learning(step: Int)
 
