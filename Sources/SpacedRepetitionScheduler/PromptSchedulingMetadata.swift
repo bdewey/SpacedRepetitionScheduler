@@ -3,7 +3,7 @@
 import Foundation
 
 /// Information needed to determine the recommended time to review a prompt again.
-public struct PromptSchedulingMetadata: Hashable {
+public struct PromptSchedulingMetadata: Hashable, Codable {
   /// The learning state of this prompt.
   public var mode: PromptSchedulingMode
 
