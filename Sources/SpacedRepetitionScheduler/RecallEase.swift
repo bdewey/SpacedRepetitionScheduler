@@ -3,7 +3,7 @@
 import Foundation
 
 /// Rating for how easy it is to recall the information associated with a prompt.
-public enum RecallEase: Int, CaseIterable, Codable {
+public enum RecallEase: Int, CaseIterable, Codable, Hashable {
   /// The learner was not able to recall the information associated with a prompt.
   case again
 
