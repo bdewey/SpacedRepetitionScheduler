@@ -15,3 +15,18 @@ public enum PromptSchedulingMode: Hashable, Codable {
   /// Items in the review state are scheduled at increasingly longer intervals with each successful recall.
   case review
 }
+
+extension PromptSchedulingMode: Comparable {
+  public static func < (lhs: PromptSchedulingMode, rhs: PromptSchedulingMode) -> Bool {
+    switch (lhs, rhs) {
+      case (.learning(let lhsStep), .learning(let rhsStep)):
+        return lhsStep < rhsStep
+      case (.learning, .review):
+        return true
+      case (.review, .learning):
+        return false
+      case (.review, .review):
+        return false
+    }
+  }
+}
