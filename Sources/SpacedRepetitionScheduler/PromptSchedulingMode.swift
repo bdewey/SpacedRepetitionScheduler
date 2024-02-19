@@ -16,6 +16,15 @@ public enum PromptSchedulingMode: Hashable, Codable {
   case review
 }
 
+extension PromptSchedulingMode: CustomDebugStringConvertible {
+  public var debugDescription: String {
+    switch self {
+      case .review: ".review"
+      case .learning(step: let step): ".learning(step: \(step)"
+    }
+  }
+}
+
 extension PromptSchedulingMode: Comparable {
   public static func < (lhs: PromptSchedulingMode, rhs: PromptSchedulingMode) -> Bool {
     switch (lhs, rhs) {
