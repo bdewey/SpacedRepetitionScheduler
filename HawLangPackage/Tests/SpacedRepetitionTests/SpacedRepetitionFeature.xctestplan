@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "03ECCA3E-D6AF-4FAD-9AA6-B0A2E8704541",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : false
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "SpacedRepetitionTests",
+        "name" : "SpacedRepetitionTests"
+      }
+    }
+  ],
+  "version" : 1
+}
