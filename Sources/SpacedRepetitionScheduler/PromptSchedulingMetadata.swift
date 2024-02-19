@@ -34,7 +34,7 @@ public struct PromptSchedulingMetadata: Hashable, Codable {
     self.interval = interval
   }
 
-  enum SchedulingError: Error {
+  public enum SchedulingError: Error {
     /// Error when we try to say that recall was "hard" for an item in the `learning` state.  This is not a valid scheduling option and should not be shown to a learner.
     case noHardRecallForLearningItems
   }
