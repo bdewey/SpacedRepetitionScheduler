@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.5.0 -- 2024-03-23
+
+- Add `Sendable` conformances
+
 ## Version 0.4.0 -- 2024-01-18
 
 - Added many synthesized protocol conformances (thanks @DandyLyons)

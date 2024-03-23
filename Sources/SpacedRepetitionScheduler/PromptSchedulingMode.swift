@@ -3,7 +3,7 @@
 import Foundation
 
 /// Determines which time interval recommendation algorithm to use with prompts.
-public enum PromptSchedulingMode: Hashable, Codable {
+public enum PromptSchedulingMode: Hashable, Codable, Sendable {
   /// Represents a prompt in the *learning* mode.
   ///
   /// An item stays in the learning state until it has been recalled a specific number of times, determined by the number of items in the ``SchedulingParameters/learningIntervals`` array.

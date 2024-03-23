@@ -8,7 +8,7 @@ public extension TimeInterval {
 }
 
 /// Holds parameters used to determine the recommended time to schedule the next review of a prompt.
-public struct SchedulingParameters: Codable, Equatable {
+public struct SchedulingParameters: Codable, Equatable, Sendable {
   /// Creates a `SpacedReptitionScheduler` with the specified scheduling parameters.
   ///
   /// - parameter learningIntervals: The time intervals between successive successful recalls of a prompt in *learning* mode. The number of items in this array determines how many times a learner must successfully recall a prompt for it to graduate to the *review* mode.
