@@ -15,3 +15,27 @@ public enum PromptSchedulingMode: Hashable, Codable, Sendable {
   /// Items in the review state are scheduled at increasingly longer intervals with each successful recall.
   case review
 }
+
+extension PromptSchedulingMode: CustomDebugStringConvertible {
+  public var debugDescription: String {
+    switch self {
+      case .review: ".review"
+      case .learning(step: let step): ".learning(step: \(step)"
+    }
+  }
+}
+
+extension PromptSchedulingMode: Comparable {
+  public static func < (lhs: PromptSchedulingMode, rhs: PromptSchedulingMode) -> Bool {
+    switch (lhs, rhs) {
+      case (.learning(let lhsStep), .learning(let rhsStep)):
+        return lhsStep < rhsStep
+      case (.learning, .review):
+        return true
+      case (.review, .learning):
+        return false
+      case (.review, .review):
+        return false
+    }
+  }
+}

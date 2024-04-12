@@ -34,7 +34,7 @@ public struct PromptSchedulingMetadata: Hashable, Codable, Sendable {
     self.interval = interval
   }
 
-  enum SchedulingError: Error {
+  public enum SchedulingError: Error {
     /// Error when we try to say that recall was "hard" for an item in the `learning` state.  This is not a valid scheduling option and should not be shown to a learner.
     case noHardRecallForLearningItems
   }
@@ -74,10 +74,14 @@ public struct PromptSchedulingMetadata: Hashable, Codable, Sendable {
     case (.review, .again):
       lapseCount += 1
       reviewSpacingFactor = max(1.3, reviewSpacingFactor - 0.2)
+      // must not be negative
+      reviewSpacingFactor = max(reviewSpacingFactor, 0)
       moveToFirstStep(schedulingParameters: schedulingParameters)
     case (.review, .hard):
       interval *= 1.2
       reviewSpacingFactor = max(1.3, reviewSpacingFactor - 0.15)
+      // must not be negative
+      reviewSpacingFactor = max(reviewSpacingFactor, 0)
     case (.review, .good):
       // Expand interval by factor, fuzzing the result, and ensuring that it at least moves forward
       // by the "hard" amount.
